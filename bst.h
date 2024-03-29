@@ -69,7 +69,6 @@ Node<Key, Value>::Node(const Key& key, const Value& value, Node<Key, Value>* par
 template<typename Key, typename Value>
 Node<Key, Value>::~Node()
 {
-
 }
 
 /**
@@ -252,7 +251,7 @@ protected:
     int getHeight(Node<Key, Value>* node) const;
     Node<Key, Value>* insertHelper(Node<Key, Value>* node, const std::pair<const Key, Value> &keyValuePair, Node <Key, Value>* parent);
     Node<Key, Value>* removeHelper(Node<Key, Value>* node, const Key& key);
-    Node<Key, Value>* successor(Node<Key, Value>* node);
+    static Node<Key, Value>* successor(Node<Key, Value>* node);
 
 protected:
     Node<Key, Value>* root_;
@@ -313,7 +312,7 @@ BinarySearchTree<Key, Value>::iterator::operator==(
     const BinarySearchTree<Key, Value>::iterator& rhs) const
 {
     // TODO done
-    return this->current_ == rhs.current_;
+    return current_ == rhs.current_;
 }
 
 /**
@@ -326,7 +325,7 @@ BinarySearchTree<Key, Value>::iterator::operator!=(
     const BinarySearchTree<Key, Value>::iterator& rhs) const
 {
     // TODO done
-    return this->current_ != rhs.current_;
+    return current_ != rhs.current_;
 }
 
 
@@ -338,45 +337,9 @@ typename BinarySearchTree<Key, Value>::iterator&
 BinarySearchTree<Key, Value>::iterator::operator++()
 {
     // TODO done
-    if (current_ == NULL)
-    {
-        return *this;
-    }
-    else
-    {
-        current_ = successor(current_);
-        return *this;
-    }
+    current_ = successor(current_);
+    return *this;
 }
-
-template<class Key, class Value>
-Node<Key, Value>* BinarySearchTree<Key, Value>::successor(Node<Key, Value>* current)
-{
-    if (current == NULL)
-    {
-        return NULL;
-    }
-    if (current->getRight() != NULL)
-    {
-        current = current->getRight();
-        while (current->getLeft() != NULL)
-        {
-            current = current->getLeft();
-        }
-        return current;
-    }
-    else
-    {
-        Node<Key, Value>* parent = current->getParent();
-        while (parent != NULL && current = parent->getRight())
-        {
-            current = parent;
-            parent = parent->getParent();
-        }
-        return parent;
-    }
-}
-
 
 /*
 -------------------------------------------------------------
@@ -404,7 +367,6 @@ BinarySearchTree<Key, Value>::~BinarySearchTree()
 {
     // TODO done
     clear();
-
 }
 
 /**
@@ -522,75 +484,51 @@ template<typename Key, typename Value>
 void BinarySearchTree<Key, Value>::remove(const Key& key)
 {
     // TODO
-    root_ = removeHelper(root_, key);
-
-}
-
-template<typename Key, typename Value>
-Node<Key, Value>* BinarySearchTree<Key, Value>::removeHelper(Node<Key, Value>* node, const Key& key)
-{
-    if (node == NULL) //empty null, do nothing
+    Node<Key, Value>* find = internalFind(key);
+    //key is not in tree
+    if (find == NULL)
     {
-        return NULL;
+        return;
     }
-    
-    if (key < node->getKey())
+    //2 children
+    if (find->getLeft() != NULL && find->getRight() != NULL)
     {
-        node->setLeft(removeHelper(node->getLeft(), key));
+        Node<Key, Value>* pred = predecessor(find);
+        nodeSwap(find, pred);
     }
 
-    else if (key > node->getKey())
+    //1 child
+    Node<Key, Value>* child = NULL;
+    if(find->getLeft() != NULL)
     {
-        node->setRight(removeHelper(node->getRight(), key));
+        child = find->getLeft();
     }
     else
     {
-        if (node->getLeft() == NULL)
-        {
-            Node<Key, Value>* temp = node->getRight();
-            delete node;
-            return temp;
-        }
-        else if (node->getRight() == NULL)
-        {
-            Node<Key, Value>* temp = node->getLeft();
-            delete node;
-            return temp;
-        }
+        child = find->getRight();
     }
 
-    Node<Key, Value>* pred = predecessor(node);
-    //node->item_ = pred->getItem();
-    node->setLeft(removeHelper(node->getLeft()), pred->getKey);
-    
-    // {
+    if(find->getParent() == NULL)
+    {
+        root_ = child;
+    }
+    else
+    {
+        if(find == find->getParent()->getLeft())
+        {
+            find->getParent()->setLeft(child);
+        }
+        else
+        {
+            find->getParent()->setRight(child);
+        }
+    }
+    if (child != NULL)
+    {
+        child->setParent(find->getParent());
+    }   
 
-    //     node = internalFind(key);
-    //     if (node->getLeft() == NULL && node->getRight() == NULL)
-    //     {
-    //         delete node;
-    //         node = NULL;
-    //     }
-    //     else if (node->getLeft() == NULL)
-    //     {
-    //         Node<Key, Value>* temp = node;
-    //         node = node->getRight();
-    //         delete temp;
-    //     }
-    //     else if (node->getRight() == NULL)
-    //     {
-    //         Node<Key, Value>* temp = node;
-    //         node = node->getLeft();
-    //         delete temp;
-    //     }
-    //     else 
-    //     {
-    //         Node<Key, Value>* pred = predecessor(node);
-    //         node = pred;
-    //         delete pred;
-    //     }
-    // }
-    return node;
+    delete find;
 }
 
 template<class Key, class Value>
@@ -620,14 +558,38 @@ Node<Key, Value>* BinarySearchTree<Key, Value>::predecessor(Node<Key, Value>* cu
             current = parent;
             parent = parent->getParent();
         }
-        // if (parent == parent->getParent()->getRight())
-        // {
-        //     return parent;
-        // }
+
         return parent;
     }
 }
 
+template<class Key, class Value>
+Node<Key, Value>* BinarySearchTree<Key, Value>::successor(Node<Key, Value>* current)
+{
+    if (current == NULL)
+    {
+        return NULL;
+    }
+    if (current->getRight() != NULL)
+    {
+        Node<Key, Value>* temp = current->getRight();
+        while (temp->getLeft() != NULL)
+        {
+            temp = temp->getLeft();
+        }
+        return temp;
+    }
+    else
+    {
+        Node<Key, Value>* parent = current->getParent();
+        while (parent != NULL && current == parent->getRight())
+        {
+            current = parent;
+            parent = parent->getParent();
+        }
+        return parent;
+    }
+}
 
 /**
 * A method to remove all contents of the tree and
