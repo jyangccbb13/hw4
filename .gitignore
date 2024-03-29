@@ -3,4 +3,5 @@ bst-test
 bst-test.cpp
 equal-paths-test
 *.o
+.vscode/
 
