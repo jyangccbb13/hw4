@@ -1,5 +1,6 @@
 hw4_tests/
 bst-test
+bst-test.cpp
 equal-paths-test
 *.o
 
