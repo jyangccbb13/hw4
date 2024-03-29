@@ -10,56 +10,36 @@ using namespace std;
 
 // You may add any prototypes of helper functions here
 
-int checkPaths(Node* root);
+bool checkPaths(Node* root, int depth, int& leaves);
 
 bool equalPaths(Node * root)
 {
-    // Add your code below
-    if (!root)
+
+int leaves = -1;
+return checkPaths(root, 0, leaves);
+}
+
+bool checkPaths(Node* root, int depth, int& leaves)
+{
+    if (root == NULL)
     {
         return true;
     }
-    else return checkPaths(root) != -1;
 
-
-}
-
-int checkPaths(Node* root)
-{
-    if (!(root->right) && !(root->left))
+    if((root->left == NULL) && root->right == NULL)
     {
-        return 1;
+        if (leaves == -1)
+        {
+            leaves = depth;
+        }
+        else if (leaves != depth)
+        {   
+        return false;
+        }
+    return true;
+
     }
-    else
-    {
-        int Ldepth = 0, Rdepth = 0;
-        if (root->left)
-        {
-            Ldepth = checkPaths(root->left);
-            if (Ldepth == -1)
-            {
-                return -1;
-            }
-        }
+    return checkPaths(root->left, depth + 1, leaves) && checkPaths(root->right, depth + 1, leaves);
 
-        if (root->right)
-        {
-            Rdepth = checkPaths(root->right);
-            if (Rdepth == -1)
-            {
-                return -1;
-            }
-        }
-
-        if (!(root->right) || !(root->left))
-        {
-            return max(Ldepth, Rdepth) + 1;
-        }
-
-        if (Ldepth == Rdepth)
-        {
-            return Ldepth + 1;
-        }
-    }
 }
 
